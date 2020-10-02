@@ -142,6 +142,8 @@ def templateMatching(i, imageUrl):
 						del bbox[bb2] 
 						bbox[bb1] = {'score':score, 
 									 'type':valve_type}
+			del res
+			del loc
 	regions = []
 	for bb in bbox.keys():
 		x = bb[0] / imgWidth
