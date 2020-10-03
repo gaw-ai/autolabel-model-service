@@ -5,8 +5,8 @@ ARG UID
 ARG GID
 
 COPY requirements.txt /tmp
-RUN pip3 install -U pip &&\
-    pip3 install -U -r /tmp/requirements.txt &&\
+RUN pip3 install --no-cache-dir -U pip &&\
+    pip3 install --no-cache-dir -U -r /tmp/requirements.txt &&\
     rm /tmp/requirements.txt
 
 RUN groupadd -g ${GID} gawai &&\
