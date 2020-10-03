@@ -16,6 +16,6 @@ COPY --chown=gawai:gawai autolabel_models /autolabel_models
 WORKDIR /autolabel_models
 USER gawai
 
-EXPOSE 10000-10999
+EXPOSE 3080 6379-6382 8265 10000-10999
 
 ENTRYPOINT [ "bash" ]
