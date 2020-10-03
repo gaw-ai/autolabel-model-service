@@ -7,6 +7,9 @@ from starlette.middleware.cors import CORSMiddleware
 
 from match_multiple_rev import COLOR, templateMatching
 
+REDIS_PASSWORD = os.environ["RAY_REDIS_PASSWORD"]
+ray.init(address="auto", _redis_password=REDIS_PASSWORD)
+
 
 def handle_templateMatching_req(flask_req: flask.Request):
     payload = flask_req.json
@@ -37,12 +40,12 @@ if __name__ == "__main__":
     print("Starting Ray Serve instance as a long-running service...")
     client = ray.serve.start(
         detached=True,
-        http_host=os.environ.get("SERVE_HTTP_HOST"),
-        http_port=os.environ.get("SERVE_HTTP_PORT"),
+        http_host=os.environ["SERVE_HTTP_HOST"],
+        http_port=int(os.environ["SERVE_HTTP_PORT"]),
         http_middlewares=[
             Middleware(
                 CORSMiddleware,
-                allow_origins=["*"],
+                allow_origins=[os.environ.get("SERVE_ALLOW_ORIGINS", "*")],
                 allow_methods=["GET,POST"])
         ])
     client.create_backend(
