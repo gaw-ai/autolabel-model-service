@@ -5,5 +5,5 @@ docker build \
 -t gaw-ai/autolabel-models-base:${VERSION} \
 -t gaw-ai/autolabel-models-base:latest \
 --build-arg UID=$(id -u) \
---build-arg GID=$(id -g)\
+--build-arg GID=$(id -g) \
 .
