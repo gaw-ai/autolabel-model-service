@@ -5,7 +5,9 @@ ARG DEBIAN_FRONTEND=noninteractive
 COPY requirements.txt /tmp
 RUN pip3 install --no-cache-dir -U pip &&\
     pip3 install --no-cache-dir -U -r /tmp/requirements.txt &&\
-    rm /tmp/requirements.txt
+    rm /tmp/requirements.txt &&\
+    pip3 install --no-cache-dir -U \
+    opencv-contrib-python-headless>=4.4.0
 
 ARG UID
 ARG GID
