@@ -8,13 +8,7 @@ docker run \
 --ulimit nofile=65536:65536 \
 --name="autolabel-model-service-worker-node" \
 --shm-size=384M \
+--volume=${PWD}/ray_node_scripts:/home/gawai/ray_node_scripts \
+--workdir=/home/gawai \
 gaw-ai/autolabel-models-base:latest \
-ray start --block \
---port=${RAY_PORT} \
---gcs-server-port=${RAY_GCS_SERVER_PORT} \
---node-manager-port=${RAY_NODE_MANAGER_PORT} \
---object-manager-port=${RAY_OBJECT_MANAGER_PORT} \
---redis-password=${RAY_REDIS_PASSWORD} \
---min-worker-port=${RAY_MIN_WORKER_PORT} \
---max-worker-port=${RAY_MAX_WORKER_PORT} \
---object-store-memory=${RAY_OBJECT_STORE_MEMORY}
+ray_node_scripts/./ray_start_worker.sh

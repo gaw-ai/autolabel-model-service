@@ -9,15 +9,7 @@ docker run \
 --name="autolabel-model-service-head-node" \
 --shm-size=512M \
 --volume=${PWD}/autolabel_models:/home/gawai/autolabel_models \
+--volume=${PWD}/ray_node_scripts:/home/gawai/ray_node_scripts \
+--workdir=/home/gawai \
 gaw-ai/autolabel-models-base:latest \
-ray start --head --block \
---include-dashboard=True --dashboard-host="0.0.0.0" \
---port=${RAY_PORT} \
---dashboard-port=${RAY_DASHBOARD_PORT} \
---gcs-server-port=${RAY_GCS_SERVER_PORT} \
---node-manager-port=${RAY_NODE_MANAGER_PORT} \
---object-manager-port=${RAY_OBJECT_MANAGER_PORT} \
---redis-password=${RAY_REDIS_PASSWORD} \
---min-worker-port=${RAY_MIN_WORKER_PORT} \
---max-worker-port=${RAY_MAX_WORKER_PORT} \
---object-store-memory=${RAY_OBJECT_STORE_MEMORY}
+ray_node_scripts/./ray_start_head.sh
