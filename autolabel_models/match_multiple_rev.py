@@ -70,7 +70,7 @@ def resize(image, width=None, height=None, inter=cv2.INTER_AREA):
     return resized
 
 
-def templateMatching(imageUrl: str, templates: list):
+def templateMatching(imageUrl: str, templates: list) -> dict:
 
     imageDict = {}
     imageDict = {

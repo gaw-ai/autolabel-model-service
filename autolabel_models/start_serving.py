@@ -1,4 +1,5 @@
 import os
+from urllib.parse import urlparse
 
 import flask
 import ray
@@ -9,6 +10,15 @@ from match_multiple_rev import COLOR, templateMatching
 
 REDIS_PASSWORD = os.environ["RAY_REDIS_PASSWORD"]
 ray.init(address="auto", _redis_password=REDIS_PASSWORD)
+
+
+def mock_templateMatching(imageUrl: str, templates: list) -> dict:
+    imageDict = {}
+    imageDict = {
+        'fileName': os.path.basename(urlparse(imageUrl).path),
+    }
+    imageDict['regions'] = []
+    return imageDict
 
 
 def handle_templateMatching_req(flask_req: flask.Request):
@@ -26,13 +36,11 @@ def handle_templateMatching_req(flask_req: flask.Request):
                 region['color'] = COLOR[count % len(COLOR)]
                 colorToType[region['cls']] = region['color']
                 count += 1
-
     project = {
         "images": templ_mtch_results,
         "projectName": payload["projectName"].strip(),
         "userId": payload["userId"].strip()
     }
-
     return project
 
 
