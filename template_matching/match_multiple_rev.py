@@ -175,8 +175,11 @@ if __name__ == "__main__":
 			 "#009688", "#cddc39", "#607d8b"]
 	colorToType = {}
 	# mp.cpu_count()
-	images = Parallel(n_jobs= mp.cpu_count())(delayed(templateMatching)(i, imageUrl) \
-		for i, imageUrl in enumerate(list(args['images'].split(","))))
+	# images = Parallel(n_jobs= mp.cpu_count())(delayed(templateMatching)(i, imageUrl) \
+	# 	for i, imageUrl in enumerate(list(args['images'].split(","))))
+	images = [
+		templateMatching(i, imageUrl)
+		for i, imageUrl in enumerate(args['images'].split(","))]
 	count = 0
 	for image in images:
 		for region in image["regions"]:
