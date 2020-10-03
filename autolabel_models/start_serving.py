@@ -1,3 +1,4 @@
+import argparse
 import os
 from urllib.parse import urlparse
 
@@ -19,6 +20,29 @@ def mock_templateMatching(imageUrl: str, templates: list) -> dict:
     }
     imageDict['regions'] = []
     return imageDict
+
+
+def handle_mock_req(flask_req: flask.Request):
+    payload = flask_req.json
+    colorToType = {}
+    templ_mtch_results = [
+        mock_templateMatching(imageUrl, payload["templates"])
+        for i, imageUrl in enumerate(payload['images'])]
+    count = 0
+    for templ_mtch_res in templ_mtch_results:
+        for region in templ_mtch_res["regions"]:
+            if region['cls'] in colorToType:
+                region['color'] = colorToType[region['cls']]
+            else:
+                region['color'] = COLOR[count % len(COLOR)]
+                colorToType[region['cls']] = region['color']
+                count += 1
+    project = {
+        "images": templ_mtch_results,
+        "projectName": payload["projectName"].strip(),
+        "userId": payload["userId"].strip()
+    }
+    return project
 
 
 def handle_templateMatching_req(flask_req: flask.Request):
@@ -45,6 +69,14 @@ def handle_templateMatching_req(flask_req: flask.Request):
 
 
 if __name__ == "__main__":
+    parser = argparse.ArgumentParser()
+    parser.add_argument(
+        '--use_mock_model',
+        default=False,
+        action='store_true',
+        help='use mock model instead')
+
+    args = parser.parse_args()
     print("Starting Ray Serve instance as a long-running service...")
     client = ray.serve.start(
         detached=True,
@@ -56,13 +88,24 @@ if __name__ == "__main__":
                 allow_origins=[os.environ.get("SERVE_ALLOW_ORIGINS", "*")],
                 allow_methods=["GET,POST"])
         ])
+    if args.use_mock_model:
+        print("Using mock model...")
     client.create_backend(
         "templateMatching_backend",
-        handle_templateMatching_req,
+        handle_mock_req if args.use_mock_model else handle_templateMatching_req,
         ray_actor_options={"memory": 4 * 1024 * 1024 * 1024})
     client.create_endpoint(
         "templateMatching_endpoint",
         backend="templateMatching_backend",
         route="/api/templateMatching",
         methods=["POST"])
+    client.create_backend(
+        "welcome_backend",
+        lambda: "Hello, world!",
+        ray_actor_options={"num_cpus": 0.001})
+    client.create_endpoint(
+        "welcome_endpoint",
+        backend="welcome_backend",
+        route="/",
+        methods=["GET", "POST"])
     print("Started Ray Serve instance as a long-running service.")
