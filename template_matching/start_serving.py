@@ -24,11 +24,11 @@ def handle_templateMatching_req(flask_req: flask.Request):
                 colorToType[region['cls']] = region['color']
                 count += 1
 
-    project = {}
-
-    project["images"] = templ_mtch_results
-    project["projectName"] = payload["projectName"].strip()
-    project["userId"] = payload["userId"].strip()
+    project = {
+        "images": templ_mtch_results,
+        "projectName": payload["projectName"].strip(),
+        "userId": payload["userId"].strip()
+    }
 
     return project
 
@@ -45,13 +45,13 @@ if __name__ == "__main__":
                 allow_origins=["*"],
                 allow_methods=["GET,POST"])
         ])
-    config = {"memory": 4 * 1024 * 1024 * 1024}
     client.create_backend(
-        "templateMatching_backend", handle_templateMatching_req, ray_actor_options=config)
+        "templateMatching_backend",
+        handle_templateMatching_req,
+        ray_actor_options={"memory": 4 * 1024 * 1024 * 1024})
     client.create_endpoint(
         "templateMatching_endpoint",
         backend="templateMatching_backend",
-        route="/templateMatching",
-                methods=["POST"]
-    )
+        route="/api/templateMatching",
+        methods=["POST"])
     print("Started Ray Serve instance as a long-running service.")
