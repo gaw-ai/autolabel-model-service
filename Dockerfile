@@ -1,14 +1,14 @@
 FROM python:3.7.9-buster
 
 ARG DEBIAN_FRONTEND=noninteractive
-ARG UID
-ARG GID
 
 COPY requirements.txt /tmp
 RUN pip3 install --no-cache-dir -U pip &&\
     pip3 install --no-cache-dir -U -r /tmp/requirements.txt &&\
     rm /tmp/requirements.txt
 
+ARG UID
+ARG GID
 RUN groupadd -g ${GID} gawai &&\
     useradd -ms /bin/bash -u ${UID} -g gawai gawai
 
