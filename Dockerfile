@@ -12,8 +12,6 @@ RUN pip3 install -U pip &&\
 RUN groupadd -g ${GID} gawai &&\
     useradd -ms /bin/bash -u ${UID} -g gawai gawai
 
-COPY --chown=gawai:gawai autolabel_models /autolabel_models
-WORKDIR /autolabel_models
 USER gawai
 
 EXPOSE 3080 6379-6382 8265 10000-10999

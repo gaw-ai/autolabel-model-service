@@ -1,14 +1,15 @@
 #!/bin/bash
 docker run \
 -d \
---network host \
---name="autolabel-model-service-head-node" \
+--network=host \
 --env-file=defaults.env \
 --env-file=config.env \
 --restart=unless-stopped \
---shm-size=512M \
 --ulimit nofile=65536:65536 \
-gaw-ai/autolabel-model-service:latest \
+--name="autolabel-model-service-head-node" \
+--shm-size=512M \
+--volume=./autolabel_models:/home/gawai/autolabel_models \
+gaw-ai/autolabel-models-base:latest \
 ray start --head --block \
 --include-dashboard --dashboard-host="0.0.0.0" \
 --port=${RAY_PORT} \

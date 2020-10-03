@@ -1,14 +1,14 @@
 #!/bin/bash
 docker run \
 -d \
---network host \
---name="autolabel-model-service-worker-node" \
+--network=host \
 --env-file=defaults.env \
 --env-file=config.env \
 --restart=unless-stopped \
---shm-size=384M \
 --ulimit nofile=65536:65536 \
-gaw-ai/autolabel-model-service:latest \
+--name="autolabel-model-service-worker-node" \
+--shm-size=384M \
+gaw-ai/autolabel-models-base:latest \
 ray start --block \
 --port=${RAY_PORT} \
 --gcs-server-port=${RAY_GCS_SERVER_PORT} \
