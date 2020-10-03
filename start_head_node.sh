@@ -8,10 +8,10 @@ docker run \
 --ulimit nofile=65536:65536 \
 --name="autolabel-model-service-head-node" \
 --shm-size=512M \
---volume=./autolabel_models:/home/gawai/autolabel_models \
+--volume=${PWD}/autolabel_models:/home/gawai/autolabel_models \
 gaw-ai/autolabel-models-base:latest \
 ray start --head --block \
---include-dashboard --dashboard-host="0.0.0.0" \
+--include-dashboard=True --dashboard-host="0.0.0.0" \
 --port=${RAY_PORT} \
 --dashboard-port=${RAY_DASHBOARD_PORT} \
 --gcs-server-port=${RAY_GCS_SERVER_PORT} \
