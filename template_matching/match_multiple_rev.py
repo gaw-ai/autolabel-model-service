@@ -9,22 +9,36 @@ import ssl
 from urllib.parse import urlparse
 
 import cv2
+import flask
 import numpy as np
+import ray
 from joblib import Parallel, delayed
+from starlette.middleware import Middleware
+from starlette.middleware.cors import CORSMiddleware
 
 from partitioned_matchTemplate import partitioned_matchTemplate
+
+COLOR = [
+    "#FF0000", "#2196f3", "#4caf50",
+    "#ef6c00", "#795548", "#689f38",
+    "#e91e63", "#9c27b0", "#3f51b5",
+    "#009688", "#cddc39", "#607d8b"
+]
+
+# single machine
+ray.init(address="auto")
 
 ssl._create_default_https_context = ssl._create_unverified_context
 
 
 # construct the argument parser and parse the arguments
-ap = argparse.ArgumentParser()
-ap.add_argument("-t", "--templates", help="Path to template images")
-ap.add_argument(
-    "-i", "--images", help="Path to images where template will be matched")
-ap.add_argument("-p", "--projectName", help="Project name")
-ap.add_argument("-u", "--userId", help="User ID")
-args = vars(ap.parse_args())
+# ap = argparse.ArgumentParser()
+# ap.add_argument("-t", "--templates", help="Path to template images")
+# ap.add_argument(
+#     "-i", "--images", help="Path to images where template will be matched")
+# ap.add_argument("-p", "--projectName", help="Project name")
+# ap.add_argument("-u", "--userId", help="User ID")
+# args = vars(ap.parse_args())
 
 
 # Returns true if two rectangles overlap
@@ -70,7 +84,7 @@ def resize(image, width=None, height=None, inter=cv2.INTER_AREA):
     return resized
 
 
-def templateMatching(i, imageUrl):
+def templateMatching(imageUrl: str, templates: list):
 
     imageDict = {}
     imageDict = {
@@ -99,7 +113,7 @@ def templateMatching(i, imageUrl):
         resized = resize(img, width=int(img.shape[1] * scale))
         r = img.shape[1] / float(resized.shape[1])
 
-        for templateUrl in list(args['templates'].split(",")):
+        for templateUrl in templates:
             # load the template image, convert it to grayscale
             cap = cv2.VideoCapture(templateUrl)
             _, template = cap.read()
@@ -180,33 +194,53 @@ def templateMatching(i, imageUrl):
     return imageDict
 
 
-if __name__ == "__main__":
-    color = [
-        "#FF0000", "#2196f3", "#4caf50",
-        "#ef6c00", "#795548", "#689f38",
-        "#e91e63", "#9c27b0", "#3f51b5",
-        "#009688", "#cddc39", "#607d8b"]
+def handle_templateMatching_req(flask_req: flask.Request):
+    payload = flask_req.json
     colorToType = {}
     # mp.cpu_count()
     # images = Parallel(n_jobs= mp.cpu_count())(delayed(templateMatching)(i, imageUrl) \
     # 	for i, imageUrl in enumerate(list(args['images'].split(","))))
-    images = [
-        templateMatching(i, imageUrl)
-        for i, imageUrl in enumerate(args['images'].split(","))]
+    templ_mtch_results = [
+        templateMatching(imageUrl, payload["templates"])
+        for i, imageUrl in enumerate(payload['images'])]
     count = 0
-    for image in images:
-        for region in image["regions"]:
+    for templ_mtch_res in templ_mtch_results:
+        for region in templ_mtch_res["regions"]:
             if region['cls'] in colorToType:
                 region['color'] = colorToType[region['cls']]
             else:
-                region['color'] = color[count % len(color)]
+                region['color'] = COLOR[count % len(COLOR)]
                 colorToType[region['cls']] = region['color']
                 count += 1
 
     project = {}
 
-    project["images"] = images
-    project["projectName"] = args["projectName"].strip()
-    project["userId"] = args["userId"].strip()
+    project["images"] = templ_mtch_results
+    project["projectName"] = payload["projectName"].strip()
+    project["userId"] = payload["userId"].strip()
 
-    print(project)
+    return project
+
+
+if __name__ == "__main__":
+    print("Starting Ray Serve instance as a long-running service...")
+    client = ray.serve.start(
+        detached=True,
+        http_host=os.environ.get("SERVE_HTTP_HOST"),
+        http_port=os.environ.get("SERVE_HTTP_PORT"),
+        http_middlewares=[
+            Middleware(
+                CORSMiddleware,
+                allow_origins=["*"],
+                allow_methods=["GET,POST"])
+        ])
+    config = {"memory": 4 * 1024 * 1024 * 1024}
+    client.create_backend(
+        "templateMatching_backend", handle_templateMatching_req, ray_actor_options=config)
+    client.create_endpoint(
+        "templateMatching_endpoint",
+        backend="templateMatching_backend",
+        route="/templateMatching",
+                methods=["POST"]
+    )
+    print("Started Ray Serve instance as a long-running service.")
