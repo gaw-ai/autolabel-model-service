@@ -4,13 +4,16 @@ from urllib.parse import urlparse
 
 import flask
 import ray
+from ray import serve
 from starlette.middleware import Middleware
 from starlette.middleware.cors import CORSMiddleware
 
 from match_multiple_rev import COLOR, templateMatching
 
-REDIS_PASSWORD = os.environ["RAY_REDIS_PASSWORD"]
-ray.init(address="auto", _redis_password=REDIS_PASSWORD)
+REDIS_PASSWORD = os.environ["G_RAY_REDIS_PASSWORD"]
+ray.init(
+    address="auto",
+    _redis_password=REDIS_PASSWORD)
 
 
 def mock_templateMatching(imageUrl: str, templates: list) -> dict:
@@ -78,14 +81,14 @@ if __name__ == "__main__":
 
     args = parser.parse_args()
     print("Starting Ray Serve instance as a long-running service...")
-    client = ray.serve.start(
+    client = serve.start(
         detached=True,
-        http_host=os.environ["SERVE_HTTP_HOST"],
-        http_port=int(os.environ["SERVE_HTTP_PORT"]),
+        http_host=os.environ["G_SERVE_HTTP_HOST"],
+        http_port=int(os.environ["G_SERVE_HTTP_PORT"]),
         http_middlewares=[
             Middleware(
                 CORSMiddleware,
-                allow_origins=[os.environ.get("SERVE_ALLOW_ORIGINS", "*")],
+                allow_origins=[os.environ.get("G_SERVE_ALLOW_ORIGINS", "*")],
                 allow_methods=["GET,POST"])
         ])
     if args.use_mock_model:

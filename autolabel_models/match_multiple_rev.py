@@ -3,13 +3,12 @@ Template Matching
 """
 import argparse
 import os
-import ssl
+# import ssl
 from urllib.parse import urlparse
 
 import cv2
 import numpy as np
 import psutil
-import ray
 from joblib import Parallel, delayed
 
 from partitioned_matchTemplate import partitioned_matchTemplate
@@ -21,10 +20,7 @@ COLOR = [
     "#009688", "#cddc39", "#607d8b"
 ]
 
-# single machine
-ray.init(address="auto")
-
-ssl._create_default_https_context = ssl._create_unverified_context
+# ssl._create_default_https_context = ssl._create_unverified_context
 
 
 def doOverlap(bb1, bbox):
