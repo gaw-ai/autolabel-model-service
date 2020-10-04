@@ -4,6 +4,7 @@ Template Matching
 import argparse
 import os
 import time
+import json
 # import ssl
 from urllib.parse import urlparse
 
@@ -236,11 +237,17 @@ def templateMatching(
     return imageDict
 
 
-def main(images: str, templates: str, u_id: str, proj_id: str, model_version: int):
+def main(
+        images: str,
+        templates: str,
+        u_id: str,
+        proj_id: str,
+        model_version: int,
+        dump_json: bool = False):
     colorToType = {}
     results = Parallel(n_jobs=psutil.cpu_count(logical=False))(
         delayed(templateMatching)(
-            imageUrl, templates, u_id, project_id, model_version)
+            imageUrl, templates, u_id, proj_id, model_version)
         for imageUrl in enumerate(list(images.split(","))))
     count = 0
     for image in results:
@@ -259,6 +266,11 @@ def main(images: str, templates: str, u_id: str, proj_id: str, model_version: in
 
     print(project)
 
+    if dump_json:
+        filepath = "%s_%s_v%d.json" % (u_id, proj_id, model_version)
+        with open(filepath, "w") as fp:
+            json.dump(project, fp, indent=2)
+
 
 if __name__ == "__main__":
     ap = argparse.ArgumentParser()
@@ -273,10 +285,14 @@ if __name__ == "__main__":
     ap.add_argument(
         "-m", "--model_version", type=int,
         help="Version of the model")
+    ap.add_argument(
+        "-j", "--json", action="store_true", default=False,
+        help="Dump json of the result")
     args = ap.parse_args()
     main(
         args.images,
         args.templates,
         args.userId.strip(),
         args.projectName.strip(),
-        args.model_version)
+        args.model_version,
+        args.json)
