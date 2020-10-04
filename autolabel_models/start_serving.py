@@ -69,11 +69,6 @@ def handle_templateMatching_req(flask_req: flask.Request):
 if __name__ == "__main__":
     parser = argparse.ArgumentParser()
     parser.add_argument(
-        '--single_machine_mode',
-        default=False,
-        action='store_true',
-        help='use mock model instead')
-    parser.add_argument(
         '--use_mock_model',
         default=False,
         action='store_true',
@@ -82,19 +77,9 @@ if __name__ == "__main__":
     args = parser.parse_args()
 
     REDIS_PASSWORD = os.environ["G_RAY_REDIS_PASSWORD"]
-    if not args.single_machine_mode:
-        ray.init(
-            address="auto",
-            _redis_password=REDIS_PASSWORD)
-    else:
-        print("Single machine mode")
-        ray.init(
-            object_store_memory=int(os.environ["G_RAY_OBJECT_STORE_MEMORY"]),
-            include_dashboard=True,
-            dashboard_host="0.0.0.0",
-            dashboard_port=int(os.environ["G_RAY_DASHBOARD_PORT"]),
-            _redis_password=REDIS_PASSWORD)
-
+    ray.init(
+        address="auto",
+        _redis_password=REDIS_PASSWORD)
     print("Starting Ray Serve instance as a long-running service...")
     client = serve.start(
         detached=True,
