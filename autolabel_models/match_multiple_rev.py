@@ -12,7 +12,9 @@ import numpy as np
 import psutil
 from joblib import Parallel, delayed
 
-from partitioned_matchTemplate import partitioned_matchTemplate
+from partitioned_matchTemplate import (partitioned_matchTemplate,
+                                       partitioned_matchTemplate_v2)
+from utils import match_result_to_bboxes
 
 COLOR = [
     "#FF0000", "#2196f3", "#4caf50",
@@ -67,11 +69,58 @@ def resize(image, width=None, height=None, inter=cv2.INTER_AREA):
     return resized
 
 
+def _mtod_v0(image: np.ndarray, template: np.ndarray, threshold: float) -> tuple:
+    method = cv2.TM_CCOEFF_NORMED
+    res = cv2.matchTemplate(
+        image, template, method)
+    templ_h, templ_w = template.shape[:2]
+    bboxes, scores = match_result_to_bboxes(
+        result=res,
+        templ_h=templ_h,
+        templ_w=templ_w,
+        threshold=threshold,
+        match_method=method)
+    return bboxes, scores
+
+
+def _mtod_v1(image: np.ndarray, template: np.ndarray, threshold: float) -> tuple:
+    method = cv2.TM_CCOEFF_NORMED
+    res = partitioned_matchTemplate(
+        image, template, method)
+    templ_h, templ_w = template.shape[:2]
+    bboxes, scores = match_result_to_bboxes(
+        result=res,
+        templ_h=templ_h,
+        templ_w=templ_w,
+        threshold=threshold,
+        match_method=method)
+    return bboxes, scores
+
+
+def _mtod_v2(image: np.ndarray, template: np.ndarray, threshold: float) -> tuple:
+    method = cv2.TM_CCOEFF_NORMED
+    bboxes, scores = partitioned_matchTemplate_v2(
+        image=image,
+        templ=template,
+        method=method,
+        threshold=threshold)
+    return bboxes, scores
+
+
+# all models must have same function signature
+MODELS = {
+    0: _mtod_v0,
+    1: _mtod_v1,
+    2: _mtod_v2
+}
+
+
 def templateMatching(
         imageUrl: str,
         templates: list,
         u_id: str = "",
-        proj_id: str = "") -> dict:
+        proj_id: str = "",
+        model_version: int = 1) -> dict:
     t_s = time.perf_counter()
     imageDict = {}
     imageDict = {
@@ -122,19 +171,18 @@ def templateMatching(
                 continue
 
             # perform match template
-            # res = cv2.matchTemplate(resized, template, cv2.TM_CCOEFF_NORMED)
-            res = partitioned_matchTemplate(
-                resized, template, cv2.TM_CCOEFF_NORMED)
-            loc = np.where(res >= threshold)
-
+            try:
+                model = MODELS[model_version]
+            except KeyError as exc:
+                raise NotImplementedError(
+                    "invalid model version '%d'" % model_version) from exc
+            bboxes, scores = model(
+                image=resized,
+                template=template,
+                threshold=threshold)
             # only include bounding boxes that are not overlapping
-            for pt in zip(*loc[::-1]):
-                score = res[pt[1], pt[0]]
-                bb1 = (
-                    int(pt[0] * r),
-                    int(pt[1] * r),
-                    int((pt[0] + tW) * r),
-                    int((pt[1] + tH) * r))
+            for bbox, score in zip(bboxes, scores):
+                bb1 = np.multiply(bbox, r).astype(np.int32).tolist()
                 isOverlap, bb2 = doOverlap(bb1, bbox)
                 if len(bbox) == 0 or not isOverlap:
                     bbox[bb1] = {
@@ -155,8 +203,6 @@ def templateMatching(
                         bbox[bb1] = {
                             'score': score,
                             'type': valve_type}
-            del res
-            del loc
             t_c_e = time.perf_counter()
             print(
                 "[%s][%s] Processed (%d/%d, %f) in %.2f s." % (
@@ -190,37 +236,47 @@ def templateMatching(
     return imageDict
 
 
-if __name__ == "__main__":
-    ap = argparse.ArgumentParser()
-    ap.add_argument("-t", "--templates", help="Path to template images")
-    ap.add_argument("-i", "--images",
-                    help="Path to images where template will be matched")
-    ap.add_argument("-p", "--projectName", help="Project name")
-    ap.add_argument("-u", "--userId", help="User ID")
-    args = vars(ap.parse_args())
-
-    color = ["#FF0000", "#2196f3", "#4caf50",
-             "#ef6c00", "#795548", "#689f38",
-             "#e91e63", "#9c27b0", "#3f51b5",
-             "#009688", "#cddc39", "#607d8b"]
+def main(images: str, templates: str, u_id: str, proj_id: str, model_version: int):
     colorToType = {}
-    images = Parallel(n_jobs=psutil.cpu_count(logical=False))(
-        delayed(templateMatching)(i, imageUrl)
-        for i, imageUrl in enumerate(list(args['images'].split(","))))
+    results = Parallel(n_jobs=psutil.cpu_count(logical=False))(
+        delayed(templateMatching)(
+            imageUrl, templates, u_id, project_id, model_version)
+        for imageUrl in enumerate(list(images.split(","))))
     count = 0
-    for image in images:
+    for image in results:
         for region in image["regions"]:
             if region['cls'] in colorToType:
                 region['color'] = colorToType[region['cls']]
             else:
-                region['color'] = color[count % len(color)]
+                region['color'] = COLOR[count % len(COLOR)]
                 colorToType[region['cls']] = region['color']
                 count += 1
 
     project = {}
-
-    project["images"] = images
-    project["projectName"] = args["projectName"].strip()
-    project["userId"] = args["userId"].strip()
+    project["images"] = results
+    project["projectName"] = proj_id
+    project["userId"] = u_id
 
     print(project)
+
+
+if __name__ == "__main__":
+    ap = argparse.ArgumentParser()
+    ap.add_argument(
+        "-t", "--templates", type=str,
+        help="Path to template images")
+    ap.add_argument(
+        "-i", "--images", type=str,
+        help="Path to images where template will be matched")
+    ap.add_argument("-p", "--projectName", type=str, help="Project name")
+    ap.add_argument("-u", "--userId", type=str, help="User ID")
+    ap.add_argument(
+        "-m", "--model_version", type=int,
+        help="Version of the model")
+    args = ap.parse_args()
+    main(
+        args.images,
+        args.templates,
+        args.userId.strip(),
+        args.projectName.strip(),
+        args.model_version)
