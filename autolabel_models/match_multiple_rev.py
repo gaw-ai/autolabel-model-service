@@ -295,7 +295,7 @@ if __name__ == "__main__":
         help="Version of the model", required=True)
     ap.add_argument(
         "-j", "--json", action="store_true", default=False,
-        help="Dump json of the result", required=True)
+        help="Dump json of the result")
     args = ap.parse_args()
     main(
         args.images,
