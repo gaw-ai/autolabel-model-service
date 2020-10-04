@@ -245,6 +245,7 @@ def main(
         model_version: int,
         dump_json: bool = False):
     colorToType = {}
+    templates = list(templates.split(","))
     results = [
         templateMatching(imageUrl, templates, u_id, proj_id, model_version)
         for imageUrl in list(images.split(","))]
