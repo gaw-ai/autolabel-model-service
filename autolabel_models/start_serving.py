@@ -88,7 +88,8 @@ if __name__ == "__main__":
         http_middlewares=[
             Middleware(
                 CORSMiddleware,
-                allow_origins=[os.environ.get("G_SERVE_ALLOW_ORIGINS", "*")],
+                allow_origins=[os.environ.get(
+                    "G_SERVE_CORS_ALLOW_ORIGINS", "*")],
                 allow_methods=["GET,POST"])
         ])
     if args.use_mock_model:
@@ -98,6 +99,7 @@ if __name__ == "__main__":
     client.create_backend(
         "templateMatching_backend",
         handle_mock_req if args.use_mock_model else handle_templateMatching_req,
+        ray_actor_options={"num_cpus": 0.5},
         config=config)
     client.create_endpoint(
         "templateMatching_endpoint",
