@@ -3,6 +3,7 @@ Template Matching
 """
 import argparse
 import os
+import time
 # import ssl
 from urllib.parse import urlparse
 
@@ -66,8 +67,12 @@ def resize(image, width=None, height=None, inter=cv2.INTER_AREA):
     return resized
 
 
-def templateMatching(imageUrl: str, templates: list) -> dict:
-
+def templateMatching(
+        imageUrl: str,
+        templates: list,
+        u_id: str = "",
+        proj_id: str = "") -> dict:
+    t_s = time.perf_counter()
     imageDict = {}
     imageDict = {
         'fileName': os.path.basename(urlparse(imageUrl).path),
@@ -95,7 +100,8 @@ def templateMatching(imageUrl: str, templates: list) -> dict:
         resized = resize(img, width=int(img.shape[1] * scale))
         r = img.shape[1] / float(resized.shape[1])
 
-        for templateUrl in templates:
+        for i_t, templateUrl in enumerate(templates):
+            t_c_s = time.perf_counter()
             # load the template image, convert it to grayscale
             cap = cv2.VideoCapture(templateUrl)
             _, template = cap.read()
@@ -151,6 +157,12 @@ def templateMatching(imageUrl: str, templates: list) -> dict:
                             'type': valve_type}
             del res
             del loc
+            t_c_e = time.perf_counter()
+            print(
+                "[%s][%s] Processed (%d/%d, %f) in %.2f s." % (
+                    u_id, proj_id,
+                    i_t+1, templates, scale,
+                    (t_c_e - t_c_s)))
     regions = []
     for bb in bbox.keys():
         x = bb[0] / imgWidth
@@ -173,6 +185,8 @@ def templateMatching(imageUrl: str, templates: list) -> dict:
         }
         regions.append(region)
     imageDict['regions'] = regions
+    t_e = time.perf_counter()
+    imageDict["processing_time"] = t_e - t_s
     return imageDict
 
 

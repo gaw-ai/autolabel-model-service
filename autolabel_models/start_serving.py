@@ -46,9 +46,22 @@ def handle_mock_req(flask_req: flask.Request):
 def handle_template_matching_req(flask_req: flask.Request):
     payload = flask_req.json
     colorToType = {}
-    templ_mtch_results = [
-        templateMatching(imageUrl, payload["templates"])
-        for i, imageUrl in enumerate(payload['images'])]
+    templ_mtch_results = []
+    for i, imageUrl in enumerate(payload['images']):
+        print(
+            "[%s][%s] Processing images... (%d of %d)" % (
+                payload["userId"], payload["projectName"],
+                i+1, len(payload['images'])))
+        imageDict = templateMatching(
+            imageUrl,
+            payload["templates"],
+            payload["userId"],
+            payload["projectName"])
+        templ_mtch_results.append(imageDict)
+        print(
+            "[%s][%s] Processed image (%d of %d) in %f s." % (
+                payload["userId"], payload["projectName"],
+                i+1, len(payload['images']), imageDict["processing_time"]))
     count = 0
     for templ_mtch_res in templ_mtch_results:
         for region in templ_mtch_res["regions"]:
@@ -60,8 +73,8 @@ def handle_template_matching_req(flask_req: flask.Request):
                 count += 1
     project = {
         "images": templ_mtch_results,
-        "projectName": payload["projectName"].strip(),
-        "userId": payload["userId"].strip()
+        "projectName": payload["projectName"],
+        "userId": payload["userId"]
     }
     return project
 
