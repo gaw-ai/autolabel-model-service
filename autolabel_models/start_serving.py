@@ -10,11 +10,6 @@ from starlette.middleware.cors import CORSMiddleware
 
 from match_multiple_rev import COLOR, templateMatching
 
-REDIS_PASSWORD = os.environ["G_RAY_REDIS_PASSWORD"]
-ray.init(
-    address="auto",
-    _redis_password=REDIS_PASSWORD)
-
 
 def mock_templateMatching(imageUrl: str, templates: list) -> dict:
     imageDict = {}
@@ -74,12 +69,32 @@ def handle_templateMatching_req(flask_req: flask.Request):
 if __name__ == "__main__":
     parser = argparse.ArgumentParser()
     parser.add_argument(
+        '--single_machine_mode',
+        default=False,
+        action='store_true',
+        help='use mock model instead')
+    parser.add_argument(
         '--use_mock_model',
         default=False,
         action='store_true',
         help='use mock model instead')
 
     args = parser.parse_args()
+
+    REDIS_PASSWORD = os.environ["G_RAY_REDIS_PASSWORD"]
+    if not args.single_machine_mode:
+        ray.init(
+            address="auto",
+            _redis_password=REDIS_PASSWORD)
+    else:
+        print("Single machine mode")
+        ray.init(
+            object_store_memory=int(os.environ["G_RAY_OBJECT_STORE_MEMORY"]),
+            include_dashboard=True,
+            dashboard_host="0.0.0.0",
+            dashboard_port=int(os.environ["G_RAY_DASHBOARD_PORT"]),
+            _redis_password=REDIS_PASSWORD)
+
     print("Starting Ray Serve instance as a long-running service...")
     client = serve.start(
         detached=True,
@@ -93,10 +108,12 @@ if __name__ == "__main__":
         ])
     if args.use_mock_model:
         print("Using mock model...")
+    config = serve.BackendConfig()
+    config.max_concurrent_queries = 1
     client.create_backend(
         "templateMatching_backend",
         handle_mock_req if args.use_mock_model else handle_templateMatching_req,
-        ray_actor_options={"memory": 4 * 1024 * 1024 * 1024})
+        config=config)
     client.create_endpoint(
         "templateMatching_endpoint",
         backend="templateMatching_backend",
@@ -104,8 +121,9 @@ if __name__ == "__main__":
         methods=["POST"])
     client.create_backend(
         "welcome_backend",
-        lambda: "Hello, world!",
-        ray_actor_options={"num_cpus": 0.001})
+        lambda x: "Hello, world!",
+        ray_actor_options={"num_cpus": 0.001},
+        config=config)
     client.create_endpoint(
         "welcome_endpoint",
         backend="welcome_backend",
