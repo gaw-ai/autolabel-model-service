@@ -280,18 +280,22 @@ if __name__ == "__main__":
     ap = argparse.ArgumentParser()
     ap.add_argument(
         "-t", "--templates", type=str,
-        help="Path to template images")
+        help="Path to template images", required=True)
     ap.add_argument(
         "-i", "--images", type=str,
-        help="Path to images where template will be matched")
-    ap.add_argument("-p", "--projectName", type=str, help="Project name")
-    ap.add_argument("-u", "--userId", type=str, help="User ID")
+        help="Path to images where template will be matched", required=True)
+    ap.add_argument(
+        "-p", "--projectName", type=str,
+        help="Project name", required=True)
+    ap.add_argument(
+        "-u", "--userId", type=str,
+        help="User ID", required=True)
     ap.add_argument(
         "-m", "--model_version", type=int,
-        help="Version of the model")
+        help="Version of the model", required=True)
     ap.add_argument(
         "-j", "--json", action="store_true", default=False,
-        help="Dump json of the result")
+        help="Dump json of the result", required=True)
     args = ap.parse_args()
     main(
         args.images,
