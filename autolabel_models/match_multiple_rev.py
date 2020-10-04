@@ -245,10 +245,13 @@ def main(
         model_version: int,
         dump_json: bool = False):
     colorToType = {}
-    results = Parallel(n_jobs=psutil.cpu_count(logical=False))(
-        delayed(templateMatching)(
-            imageUrl, templates, u_id, proj_id, model_version)
-        for imageUrl in enumerate(list(images.split(","))))
+    results = [
+        templateMatching(imageUrl, templates, u_id, proj_id, model_version)
+        for imageUrl in list(images.split(","))]
+    # results = Parallel(n_jobs=psutil.cpu_count(logical=False))(
+    #     delayed(templateMatching)(
+    #         imageUrl, templates, u_id, proj_id, model_version)
+    #     for imageUrl in list(images.split(",")))
     count = 0
     for image in results:
         for region in image["regions"]:
