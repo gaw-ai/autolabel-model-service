@@ -11,7 +11,7 @@ from starlette.middleware.cors import CORSMiddleware
 from match_multiple_rev import COLOR, templateMatching
 
 
-def mock_templateMatching(imageUrl: str, templates: list) -> dict:
+def mock_template_matching(imageUrl: str, templates: list) -> dict:
     imageDict = {}
     imageDict = {
         'fileName': os.path.basename(urlparse(imageUrl).path),
@@ -24,7 +24,7 @@ def handle_mock_req(flask_req: flask.Request):
     payload = flask_req.json
     colorToType = {}
     templ_mtch_results = [
-        mock_templateMatching(imageUrl, payload["templates"])
+        mock_template_matching(imageUrl, payload["templates"])
         for i, imageUrl in enumerate(payload['images'])]
     count = 0
     for templ_mtch_res in templ_mtch_results:
@@ -43,7 +43,7 @@ def handle_mock_req(flask_req: flask.Request):
     return project
 
 
-def handle_templateMatching_req(flask_req: flask.Request):
+def handle_template_matching_req(flask_req: flask.Request):
     payload = flask_req.json
     colorToType = {}
     templ_mtch_results = [
@@ -97,14 +97,14 @@ if __name__ == "__main__":
     config = serve.BackendConfig()
     config.max_concurrent_queries = 1
     client.create_backend(
-        "templateMatching_backend",
-        handle_mock_req if args.use_mock_model else handle_templateMatching_req,
+        "template_matching_backend",
+        handle_mock_req if args.use_mock_model else handle_template_matching_req,
         ray_actor_options={"num_cpus": 0.5},
         config=config)
     client.create_endpoint(
-        "templateMatching_endpoint",
-        backend="templateMatching_backend",
-        route="/api/templateMatching",
+        "template_matching_endpoint",
+        backend="template_matching_backend",
+        route="/api/template_matching",
         methods=["POST"])
     client.create_backend(
         "welcome_backend",
