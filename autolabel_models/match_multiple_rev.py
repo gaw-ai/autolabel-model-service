@@ -161,7 +161,7 @@ def templateMatching(
             print(
                 "[%s][%s] Processed (%d/%d, %f) in %.2f s." % (
                     u_id, proj_id,
-                    i_t+1, templates, scale,
+                    i_t+1, len(templates), scale,
                     (t_c_e - t_c_s)))
     regions = []
     for bb in bbox.keys():
