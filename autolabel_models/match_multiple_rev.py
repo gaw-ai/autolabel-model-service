@@ -181,9 +181,10 @@ def templateMatching(
                 image=resized,
                 template=template,
                 threshold=threshold)
+            bboxes = np.multiply(bboxes, r).astype(np.int32)
             # only include bounding boxes that are not overlapping
-            for bbox, score in zip(bboxes, scores):
-                bb1 = np.multiply(bbox, r).astype(np.int32).tolist()
+            for bb, score in zip(bboxes, scores):
+                bb1 = tuple(bb.tolist())
                 isOverlap, bb2 = doOverlap(bb1, bbox)
                 if len(bbox) == 0 or not isOverlap:
                     bbox[bb1] = {
