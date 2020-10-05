@@ -324,14 +324,6 @@ def partitioned_matchTemplate_v2(
                 image=part_view,
                 templ=templ,
                 method=method,
-                result=result[
-                    y_res_s:y_res_e,
-                    x_res_s:x_res_e],
-                mask=mask)
-            cv2.matchTemplate(
-                image=part_view,
-                templ=templ,
-                method=method,
                 result=tmp_result[:tmp_y_res_e, :tmp_x_res_e],
                 mask=mask)
             _bboxes, _scores = match_result_to_bboxes(
