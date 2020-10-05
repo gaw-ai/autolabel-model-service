@@ -121,7 +121,10 @@ def templateMatching(
         templates: list,
         u_id: str = "",
         proj_id: str = "",
-        model_version: int = 1) -> dict:
+        model_version: int = 2) -> dict:
+    """
+    template matching
+    """
     t_s = time.perf_counter()
     imageDict = {}
     imageDict = {
