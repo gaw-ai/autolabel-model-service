@@ -5,8 +5,6 @@ from urllib.parse import urlparse
 import flask
 import ray
 from ray import serve
-from starlette.middleware import Middleware
-from starlette.middleware.cors import CORSMiddleware
 
 from match_multiple_rev import COLOR, templateMatching
 
@@ -94,25 +92,19 @@ if __name__ == "__main__":
         address="auto",
         _redis_password=REDIS_PASSWORD)
     print("Starting Ray Serve instance as a long-running service...")
+    # We will use NGINX as the middleware
     client = serve.start(
         detached=True,
         http_host=os.environ["G_SERVE_HTTP_HOST"],
-        http_port=int(os.environ["G_SERVE_HTTP_PORT"]),
-        http_middlewares=[
-            Middleware(
-                CORSMiddleware,
-                allow_origins=[os.environ.get(
-                    "G_SERVE_CORS_ALLOW_ORIGINS", "*")],
-                allow_methods=["GET,POST"])
-        ])
+        http_port=int(os.environ["G_SERVE_HTTP_PORT"]))
     if args.use_mock_model:
         print("Using mock model...")
     config = serve.BackendConfig()
-    config.max_concurrent_queries = 1
+    # Assume CPU:RAM ratio = 1:2
     client.create_backend(
         "template_matching_backend",
         handle_mock_req if args.use_mock_model else handle_template_matching_req,
-        ray_actor_options={"num_cpus": 0.5},
+        ray_actor_options={"num_cpus": 1.0},
         config=config)
     client.create_endpoint(
         "template_matching_endpoint",
@@ -122,7 +114,7 @@ if __name__ == "__main__":
     client.create_backend(
         "welcome_backend",
         lambda x: "Hello, world!",
-        ray_actor_options={"num_cpus": 0.001},
+        ray_actor_options={"num_cpus": 0.0},
         config=config)
     client.create_endpoint(
         "welcome_endpoint",
