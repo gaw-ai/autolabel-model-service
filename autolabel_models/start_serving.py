@@ -21,9 +21,15 @@ def mock_template_matching(imageUrl: str, templates: list) -> dict:
 def handle_mock_req(flask_req: flask.Request):
     payload = flask_req.json
     colorToType = {}
-    templ_mtch_results = [
-        mock_template_matching(imageUrl, payload["templates"])
-        for i, imageUrl in enumerate(payload['images'])]
+    if isinstance(payload['images'], str):
+        templ_mtch_results = mock_template_matching(
+            payload['images'], payload["templates"])
+    elif isinstance(payload['images'], (list, tuple)):
+        templ_mtch_results = [
+            mock_template_matching(imageUrl, payload["templates"])
+            for i, imageUrl in enumerate(payload['images'])]
+    else:
+        raise NotImplementedError
     count = 0
     for templ_mtch_res in templ_mtch_results:
         for region in templ_mtch_res["regions"]:
@@ -44,31 +50,47 @@ def handle_mock_req(flask_req: flask.Request):
 def handle_template_matching_req(flask_req: flask.Request):
     payload = flask_req.json
     colorToType = {}
-    templ_mtch_results = []
-    for i, imageUrl in enumerate(payload['images']):
+    if isinstance(payload['images'], str):
         print(
-            "[%s][%s] Processing images... (%d of %d)" % (
-                payload["userId"], payload["projectName"],
-                i+1, len(payload['images'])))
-        imageDict = templateMatching(
-            imageUrl,
+            "[%s][%s] Processing image..." % (
+                payload["userId"], payload["projectName"]))
+        templ_mtch_results = templateMatching(
+            payload['images'],
             payload["templates"],
             payload["userId"],
             payload["projectName"])
-        templ_mtch_results.append(imageDict)
         print(
-            "[%s][%s] Processed image (%d of %d) in %f s." % (
+            "[%s][%s] Processed image in %f s." % (
                 payload["userId"], payload["projectName"],
-                i+1, len(payload['images']), imageDict["processing_time"]))
-    count = 0
-    for templ_mtch_res in templ_mtch_results:
-        for region in templ_mtch_res["regions"]:
-            if region['cls'] in colorToType:
-                region['color'] = colorToType[region['cls']]
-            else:
-                region['color'] = COLOR[count % len(COLOR)]
-                colorToType[region['cls']] = region['color']
-                count += 1
+                templ_mtch_results["processing_time"]))
+    elif isinstance(payload['images'], (list, tuple)):
+        templ_mtch_results = []
+        for i, imageUrl in enumerate(payload['images']):
+            print(
+                "[%s][%s] Processing images... (%d of %d)" % (
+                    payload["userId"], payload["projectName"],
+                    i+1, len(payload['images'])))
+            imageDict = templateMatching(
+                imageUrl,
+                payload["templates"],
+                payload["userId"],
+                payload["projectName"])
+            templ_mtch_results.append(imageDict)
+            print(
+                "[%s][%s] Processed image (%d of %d) in %f s." % (
+                    payload["userId"], payload["projectName"],
+                    i+1, len(payload['images']), imageDict["processing_time"]))
+        count = 0
+        for templ_mtch_res in templ_mtch_results:
+            for region in templ_mtch_res["regions"]:
+                if region['cls'] in colorToType:
+                    region['color'] = colorToType[region['cls']]
+                else:
+                    region['color'] = COLOR[count % len(COLOR)]
+                    colorToType[region['cls']] = region['color']
+                    count += 1
+    else:
+        raise NotImplementedError
     project = {
         "images": templ_mtch_results,
         "projectName": payload["projectName"],
