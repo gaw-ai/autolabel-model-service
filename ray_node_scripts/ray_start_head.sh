@@ -1,6 +1,6 @@
 #!/bin/bash
 ray start --head --block \
---include-dashboard=True --dashboard-host="172.17.0.1" \
+--include-dashboard=True --dashboard-host="0.0.0.0" \
 --port=${G_RAY_PORT} \
 --dashboard-port=${G_RAY_DASHBOARD_PORT} \
 --gcs-server-port=${G_RAY_GCS_SERVER_PORT} \
