@@ -273,7 +273,8 @@ def partitioned_matchTemplate_v2(
             part_view = image[
                 y_part_s:y_part_e,
                 x_part_s:x_part_e]
-            if not part_view.size or part_view.shape[0] < templ_h:
+            if not part_view.size or part_view.shape[0] < templ_h or part_view.shape[1] < templ_w:
+                # Do not process empty array
                 continue
             x_res_s, y_res_s = i_x * ps_w, j_y * ps_h
             x_res_e, y_res_e = x_res_s + ps_w - templ_w + 1, y_res_s + ps_h
@@ -303,11 +304,12 @@ def partitioned_matchTemplate_v2(
     tmp_result = np.empty((tmp_res_h, tmp_res_w), dtype=np.float32)
     # x-axis separator-part-wise calculation (vertical bars)
     for j_y in range(y_parts_cnt):
-        for i_x in range(x_parts_cnt):
+        for i_x in range(x_parts_cnt - 1):
             x_part_s = i_x * ps_w + (ps_w - templ_w + 1)
             y_part_s = j_y * ps_h
             x_part_e = x_part_s + (2 * templ_w - 2)
             y_part_e = y_part_s + ps_h + templ_h - 1
+            x_part_e = img_w if x_part_e > img_w else x_part_e
             y_part_e = img_h if y_part_e > img_h else y_part_e
             part_view = image[
                 y_part_s:y_part_e,
@@ -317,6 +319,7 @@ def partitioned_matchTemplate_v2(
             x_res_s = i_x * ps_w + (ps_w - templ_w + 1)
             y_res_s = j_y * ps_h
             x_res_e, y_res_e = x_res_s + templ_w - 1, y_res_s + ps_h
+            x_res_e = res_w if x_res_e > res_w else x_res_e
             y_res_e = res_h if y_res_e > res_h else y_res_e
             tmp_x_res_e = x_res_e - x_res_s
             tmp_y_res_e = y_res_e - y_res_s
