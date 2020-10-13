@@ -273,7 +273,7 @@ def partitioned_matchTemplate_v2(
             part_view = image[
                 y_part_s:y_part_e,
                 x_part_s:x_part_e]
-            if part_view.shape[0] < templ_h:
+            if not part_view.size or part_view.shape[0] < templ_h:
                 continue
             x_res_s, y_res_s = i_x * ps_w, j_y * ps_h
             x_res_e, y_res_e = x_res_s + ps_w - templ_w + 1, y_res_s + ps_h
