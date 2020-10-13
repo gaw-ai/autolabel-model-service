@@ -301,7 +301,7 @@ def partitioned_matchTemplate_v2(
     # Temporary partition result container
     tmp_res_h, tmp_res_w = ps_h, templ_w - 1
     tmp_result = np.empty((tmp_res_h, tmp_res_w), dtype=np.float32)
-    # x-axis separator-part-wise calculation
+    # x-axis separator-part-wise calculation (vertical bars)
     for j_y in range(y_parts_cnt):
         for i_x in range(x_parts_cnt):
             x_part_s = i_x * ps_w + (ps_w - templ_w + 1)
