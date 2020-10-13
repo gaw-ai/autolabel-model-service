@@ -79,8 +79,8 @@ def partitioned_matchTemplate(
             result=result,
             mask=mask)
     templ_h, templ_w = templ.shape[:2]
-    ps_h = templ_h if ps_h <= templ_h else ps_h
-    ps_w = templ_w if ps_w <= templ_w else ps_w
+    ps_h = templ_h + 1 if ps_h <= templ_h else ps_h
+    ps_w = templ_w + 1 if ps_w <= templ_w else ps_w
 
     # Result container
     res_h, res_w = img_h - templ_h + 1, img_w - templ_w + 1
@@ -243,8 +243,8 @@ def partitioned_matchTemplate_v2(
             templ_w=templ_w,
             threshold=threshold,
             match_method=method)
-    ps_h = templ_h if ps_h <= templ_h else ps_h
-    ps_w = templ_w if ps_w <= templ_w else ps_w
+    ps_h = templ_h + 1 if ps_h <= templ_h else ps_h
+    ps_w = templ_w + 1 if ps_w <= templ_w else ps_w
     res_h, res_w = img_h - templ_h + 1, img_w - templ_w + 1
 
     # Results container
