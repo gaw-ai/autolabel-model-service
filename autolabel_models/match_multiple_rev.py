@@ -209,11 +209,11 @@ def templateMatching(
                             'score': score,
                             'type': valve_type}
             t_c_e = time.perf_counter()
-            print(
-                "[%s][%s] Processed (%d/%d, %f) in %.2f s." % (
-                    u_id, proj_id,
-                    i_t+1, len(templates), scale,
-                    (t_c_e - t_c_s)))
+            # print(
+            #     "[%s][%s] Processed (%d/%d, %f) in %.2f s." % (
+            #         u_id, proj_id,
+            #         i_t+1, len(templates), scale,
+            #         (t_c_e - t_c_s)))
     regions = []
     for bb in bbox.keys():
         x = bb[0] / imgWidth

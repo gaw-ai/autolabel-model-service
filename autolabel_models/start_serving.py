@@ -52,24 +52,24 @@ def handle_template_matching_req(flask_req: flask.Request):
     colorToType = {}
     if isinstance(payload['images'], str):
         print(
-            "[%s][%s] Processing image..." % (
-                payload["userId"], payload["projectName"]))
+            "[%s][%s] Processing image (%d templates)..." % (
+                payload["userId"], payload["projectName"], len(payload["templates"])))
         templ_mtch_results = templateMatching(
             payload['images'],
             payload["templates"],
             payload["userId"],
             payload["projectName"])
         print(
-            "[%s][%s] Processed image in %f s." % (
+            "[%s][%s] Processed image (%d templates) in %f s." % (
                 payload["userId"], payload["projectName"],
-                templ_mtch_results["processing_time"]))
+                len(payload["templates"]), templ_mtch_results["processing_time"]))
     elif isinstance(payload['images'], (list, tuple)):
         templ_mtch_results = []
         for i, imageUrl in enumerate(payload['images']):
             print(
-                "[%s][%s] Processing images... (%d of %d)" % (
+                "[%s][%s] Processing images (%d templates)... (%d of %d)" % (
                     payload["userId"], payload["projectName"],
-                    i+1, len(payload['images'])))
+                    len(payload["templates"]), i+1, len(payload['images'])))
             imageDict = templateMatching(
                 imageUrl,
                 payload["templates"],
@@ -77,8 +77,9 @@ def handle_template_matching_req(flask_req: flask.Request):
                 payload["projectName"])
             templ_mtch_results.append(imageDict)
             print(
-                "[%s][%s] Processed image (%d of %d) in %f s." % (
+                "[%s][%s] Processed image (%d templates) (%d of %d) in %f s." % (
                     payload["userId"], payload["projectName"],
+                    len(payload["templates"]),
                     i+1, len(payload['images']), imageDict["processing_time"]))
         count = 0
         for templ_mtch_res in templ_mtch_results:
