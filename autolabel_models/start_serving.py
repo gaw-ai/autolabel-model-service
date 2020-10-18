@@ -124,10 +124,11 @@ if __name__ == "__main__":
         print("Using mock model...")
     config = serve.BackendConfig()
     # Assume CPU:RAM ratio = 1:2
+    # XXX: temporarily we set num_cpus to 0
     client.create_backend(
         "template_matching_backend",
         handle_mock_req if args.use_mock_model else handle_template_matching_req,
-        ray_actor_options={"num_cpus": 1.0},
+        ray_actor_options={"num_cpus": 0.0},
         config=config)
     client.create_endpoint(
         "template_matching_endpoint",
